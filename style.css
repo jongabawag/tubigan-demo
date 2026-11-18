@@ -1,0 +1,773 @@
+/* Tubigan Tracker — mobile-first styles.
+   HARD RULE: zero horizontal scrolling anywhere. Wide tables become labelled
+   card stacks below 900px using the data-label convention (see the .data
+   media query at the bottom); verify at 390/360/320px:
+   document.scrollWidth === clientWidth on every tab, no exceptions. */
+
+:root {
+  --blue: #1d4ed8;
+  --blue-dark: #1e40af;
+  --bg: #eff6ff;
+  --card: #ffffff;
+  --ink: #0f172a;
+  --muted: #64748b;
+  --line: #e2e8f0;
+}
+
+* { box-sizing: border-box; }
+
+/* `hidden` must always win, even where media queries set display on rows. */
+[hidden] { display: none !important; }
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+/* ---------------------------------------------------------- header */
+
+.topbar {
+  background: linear-gradient(135deg, var(--blue-dark), var(--blue));
+  color: #fff;
+  padding: 12px 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* keep header content above the water decorations */
+.topbar > * { position: relative; z-index: 1; }
+.topbar .bubbles, .topbar .waves { position: absolute; z-index: 0; }
+
+/* ---- rising bubbles (decorative, no JS) ---- */
+.bubbles span {
+  position: absolute;
+  bottom: -14px;
+  left: 0;
+  width: var(--s, 10px);
+  height: var(--s, 10px);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  opacity: 0;
+  animation: bubble-rise var(--d, 10s) ease-in infinite;
+}
+.bubbles span:nth-child(1) { --s: 9px;  --d: 11s; left: 6%;  animation-delay: 0s;   }
+.bubbles span:nth-child(2) { --s: 14px; --d: 13s; left: 22%; animation-delay: 3s;   }
+.bubbles span:nth-child(3) { --s: 7px;  --d: 9s;  left: 41%; animation-delay: 6s;   }
+.bubbles span:nth-child(4) { --s: 12px; --d: 12s; left: 58%; animation-delay: 1.5s; }
+.bubbles span:nth-child(5) { --s: 8px;  --d: 10s; left: 74%; animation-delay: 5s;   }
+.bubbles span:nth-child(6) { --s: 15px; --d: 14s; left: 90%; animation-delay: 8s;   }
+
+@keyframes bubble-rise {
+  0%   { transform: translateY(0);    opacity: 0; }
+  15%  { opacity: 0.55; }
+  85%  { opacity: 0.4; }
+  100% { transform: translateY(-170px); opacity: 0; }
+}
+
+/* ---- wave edge melting into the page background ---- */
+.waves {
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 16px;
+  pointer-events: none;
+}
+.waves svg {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  fill: var(--bg);
+  animation: wave-move 14s linear infinite;
+}
+.waves svg.wave2 {
+  opacity: 0.45;
+  animation-duration: 9s;
+  animation-direction: reverse;
+}
+
+@keyframes wave-move {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bubbles span, .waves svg { animation: none; }
+}
+
+.brand-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.topbar h1 { margin: 0; font-size: 20px; }
+.brand-icon { height: 26px; width: auto; vertical-align: -7px; }
+
+.userbox { display: flex; align-items: center; gap: 8px; font-size: 14px; }
+.userbox .who { font-weight: 600; }
+
+.role-badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.role-owner { background: #7c2d12; }
+.role-dispatcher { background: #1e40af; }
+.role-driver { background: #166534; }
+
+.signout { color: #e0f2fe; font-size: 13px; }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+
+.tab {
+  color: #e0f2fe;
+  text-decoration: none;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 14px;
+}
+
+.tab.active { background: rgba(255, 255, 255, 0.2); color: #fff; font-weight: 600; }
+
+/* Bell badge on the Delivery tab (drivers, unseen delivery request only).
+   Sits inside the pill so flex-wrap keeps it on one line with the label. */
+.nav-bell {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  background: #fef3c7;
+  border: 1px solid #f59e0b;
+  color: #92400e;
+  border-radius: 999px;
+  padding: 1px 7px;
+  font-size: 12px;
+  font-weight: 600;
+  margin-left: 2px;
+  white-space: nowrap;
+}
+.nav-bell .ico { width: 12px; height: 12px; margin-right: 0; vertical-align: 0; }
+
+/* ------------------------------------------------------------ main */
+
+/* overflow-wrap inherits everywhere (cards, tds, notes): a long unbreakable
+   string — a phone number typed without dashes, a long name — wraps instead of
+   being clipped by the tables' overflow:hidden. */
+main { padding: 16px; max-width: 760px; margin: 0 auto; overflow-wrap: anywhere; }
+
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+
+/* ---- dashboard quick actions (dispatcher's one-tap morning routine) ---- */
+.quick-actions { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 6px; }
+.quick-btn {
+  display: inline-block;
+  padding: 12px 16px;
+  border-radius: 10px;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  text-decoration: none;
+}
+.quick-btn:hover { background: var(--blue-dark); }
+.quick-secondary { background: var(--card); color: var(--blue-dark); border: 1px solid var(--line); }
+.quick-secondary:hover { background: #f8fafc; }
+
+/* ---- friendly empty states ---- */
+.empty-state {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(2, 48, 71, 0.08);
+}
+
+/* ---- stat cards carry the water theme (tiny droplet watermark) ---- */
+.card { position: relative; overflow: hidden; }
+.card::after {
+  content: "💧";
+  position: absolute;
+  right: 6px;
+  bottom: 2px;
+  font-size: 28px;
+  opacity: 0.14;
+  pointer-events: none;
+}
+
+/* ---- reports: pure-CSS bar chart (no JS, no libraries) ---- */
+.chart {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  height: 130px;
+  background: var(--card);
+  border-radius: 12px;
+  padding: 10px 10px 6px;
+  box-shadow: 0 1px 3px rgba(2, 48, 71, 0.08);
+}
+.chart-col {
+  flex: 1 1 0;
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 3px;
+}
+.chart-bar {
+  background: linear-gradient(180deg, var(--blue), var(--blue-dark));
+  border-radius: 4px 4px 0 0;
+  min-height: 2px;
+}
+.chart-day { font-size: 9px; color: var(--muted); text-align: center; }
+.chart-note { margin: 6px 0 12px; }
+
+/* ---- customer search row ---- */
+.search-row { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: #334155; margin-bottom: 10px; }
+
+/* ---- trip detail: pin the open trip's stats while scrolling (phone) ----
+   Negative top lets the title/date scroll away while the stats row stays. */
+.trip-card.trip-sticky {
+  position: sticky;
+  top: -84px;
+  z-index: 20;
+  box-shadow: 0 4px 14px rgba(2, 48, 71, 0.18);
+}
+
+.card {  background: var(--card);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(2, 48, 71, 0.08);
+}
+
+.card-num { font-size: 28px; font-weight: 700; color: var(--blue-dark); }
+.card-label { font-size: 13px; color: var(--muted); margin-top: 4px; }
+
+.muted { color: var(--muted); font-size: 14px; }
+
+.flash {
+  background: #dbeafe;
+  border: 1px solid #93c5fd;
+  color: #1e40af;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.panel {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(2, 48, 71, 0.08);
+  margin-bottom: 16px;
+}
+
+.panel h3 { margin: 0 0 10px; font-size: 16px; }
+
+.stack-form label { display: block; font-size: 14px; margin: 10px 0 4px; color: #334155; }
+
+input, select {
+  width: 100%;
+  padding: 9px 11px;
+  font-size: 15px;
+  border: 1px solid #cbd5e1;
+  border-radius: 9px;
+  background: #f8fafc;
+}
+
+input:focus, select:focus { outline: 2px solid var(--blue); border-color: var(--blue); }
+
+button {
+  padding: 9px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+  background: var(--blue);
+  border: none;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+button.small { padding: 6px 10px; font-size: 13px; }
+
+button.danger { background: #b91c1c; }
+
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+
+.stack-form button { margin-top: 12px; width: 100%; }
+
+/* ----------------------------------------------------------- tables
+   The data-label convention: every <td> carries data-label="Column", so the
+   mobile layout can turn each row into a labelled card without any JS. */
+
+.data {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--card);
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(2, 48, 71, 0.08);
+}
+
+.data th, .data td {
+  text-align: left;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.data th { background: #f8fafc; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--muted); white-space: nowrap; }
+/* corner rounding (was overflow:hidden on .data — moved here so the
+   actions dropdown isn't clipped by its own table) */
+.data thead th:first-child { border-top-left-radius: 12px; }
+.data thead th:last-child { border-top-right-radius: 12px; }
+.data tbody tr:last-child td:first-child { border-bottom-left-radius: 12px; }
+.data tbody tr:last-child td:last-child { border-bottom-right-radius: 12px; }
+
+.data td.actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.data td.actions form { display: flex; gap: 6px; align-items: center; }
+.data td.actions input { width: 150px; }
+
+.pill { padding: 2px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pill-on { background: #dcfce7; color: #166534; }
+.pill-off { background: #fee2e2; color: #b91c1c; }
+
+/* Stop-row action pills: Edit (blue) and Delete (red), thumb-sized. */
+a.pill { text-decoration: none; display: inline-block; }
+.pill-edit { background: var(--blue); color: #fff; padding: 4px 14px; }
+.pill-delete { background: #dc2626; color: #fff; padding: 4px 14px; }
+a.pill-edit:hover { background: var(--blue-dark); }
+.pill-delete:hover { background: #b91c1c; }
+
+/* ------------------------------------------------------- trips */
+
+.date-picker { display: flex; gap: 8px; align-items: end; margin-bottom: 12px; flex-wrap: wrap; }
+.date-picker label { font-size: 14px; color: #334155; display: flex; flex-direction: column; gap: 4px; }
+.date-picker input { width: auto; }
+.date-picker button { height: 34px; margin-bottom: 3px; } /* shorter button, still centred on the date input */
+.date-picker .muted { align-self: flex-end; margin-bottom: 10px; } /* centre the link on the input row, not the whole label */
+
+.inline-form { display: flex; gap: 8px; flex-wrap: wrap; align-items: end; }
+.inline-form label { font-size: 14px; color: #334155; display: flex; flex-direction: column; gap: 4px; }
+.inline-form input, .inline-form select { width: auto; min-width: 160px; }
+
+.trip-card {
+  background: var(--card);
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 1px 3px rgba(2, 48, 71, 0.08);
+  margin-bottom: 12px;
+}
+.trip-card.trip-closed { opacity: 0.85; }
+.trip-head { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.trip-head h2, .trip-head h3 { margin: 0; }
+.small-link { font-size: 13px; color: var(--blue-dark); }
+.trip-stats { display: flex; gap: 16px; flex-wrap: wrap; margin-top: 8px; font-size: 14px; color: var(--muted); }
+.trip-stats strong { color: var(--ink); }
+
+.settle {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 9px;
+  font-size: 14px;
+}
+.settle-ok { background: #ecfdf5; color: #047857; border: 1px solid #a7f3d0; }
+.settle-bad { background: #fff7ed; color: #c2410c; border: 1px solid #fed7aa; }
+
+.rename-form { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.rename-form input { width: 110px; }
+.price-form { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.price-form input { width: 110px; }
+
+/* Inventory tab: the Lend / Take back button pair sits side by side
+   (stack-form buttons are full-width by default — these two share a row). */
+.loan-buttons { display: flex; gap: 8px; margin-top: 12px; }
+.loan-buttons button { width: auto; flex: 1; margin-top: 0; }
+
+/* Customers Actions cell: one small ⋯ button opens a dropdown menu
+   (Edit · Pricing · Deactivate/Activate · Delete); the edit/pricing forms
+   stay hidden until their menu item opens them. The panel is absolutely
+   positioned, so .data must NOT clip it (overflow moved to corner cells). */
+.action-menu { position: relative; display: inline-block; }
+.menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 11px;
+  background: transparent;
+  color: var(--muted);
+  border: 1px solid var(--line);
+  font-weight: normal;
+}
+.menu-btn:hover { background: var(--bg); color: var(--blue-dark); border-color: var(--muted); }
+.menu-btn .ico-dots { width: 18px; height: 18px; }
+.ico { width: 15px; height: 15px; vertical-align: -3px; margin-right: 8px; flex-shrink: 0; }
+.menu-item { display: flex; align-items: center; }
+.menu-panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 40;
+  min-width: 150px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 5px;
+  box-shadow: 0 6px 18px rgba(2, 48, 71, 0.18);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.menu-panel form { display: block; }
+.menu-item {
+  width: 100%;
+  text-align: left;
+  padding: 8px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  background: transparent;
+  color: var(--ink);
+  border-radius: 7px;
+}
+.menu-item:hover { background: var(--bg); }
+.menu-danger { color: #b91c1c; }
+.menu-danger:hover { background: #fef2f2; }
+.inline-edit input { width: 130px; }
+
+/* Customers table: the Actions cell holds three whole forms (rename, pricing,
+   activate) — stack them one row per form so nothing jumbles together. */
+.data td.actions-stack { display: flex; flex-direction: column; gap: 8px; align-items: stretch; }
+.data td.actions-stack form { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.data td.actions-stack form input:not([type="hidden"]) { flex: 1 1 110px; width: auto; min-width: 0; }
+
+.range-picker { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 8px; }
+.range-picker .tab { background: rgba(14, 116, 144, 0.08); color: var(--blue-dark); }
+.range-picker .tab.active { background: var(--blue); color: #fff; }
+
+/* ------------------------------------------ mobile: tables → cards
+   Below 900px every .data table becomes a stack of labelled cards:
+   thead hidden, each row a card, each td a label/value line. */
+
+@media (max-width: 900px) {
+  .data thead { display: none; }
+  .data, .data tbody, .data tr, .data td { display: block; width: 100%; }
+  .data tr {
+    background: var(--card);
+    border: 1px solid var(--line);  /* each row reads as its own box, not one merged sheet */
+    border-radius: 12px;
+    padding: 8px 12px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(2, 48, 71, 0.08);
+  }
+  .data td {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px dashed var(--line);
+    padding: 8px 0;
+  }
+  .data td:last-child { border-bottom: none; }
+  .data td::before {
+    content: attr(data-label);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    flex-shrink: 0;
+  }
+  .data td.actions { flex-direction: column; align-items: stretch; }
+  .data td.actions::before { content: attr(data-label); }
+  .data td.actions input { width: 100%; }
+  /* Stacked action buttons must all fill the card row: the form wrapper
+     stretches but its button would keep its natural width otherwise. */
+  .data td.actions > form { width: 100%; }
+  .data td.actions > a,
+  .data td.actions > button,
+  .data td.actions > form button { width: 100%; text-align: center; }
+  /* Stop cards: label on its own line, then Edit + Delete sharing one row.
+     Grid (not flex) so the two buttons come out exactly equal — the Edit
+     link's padding skews a flex split. */
+  .data td.actions-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-items: center; }
+  .data td.actions-row::before { grid-column: 1 / -1; }
+  /* ⋯ menu cards (Customers / Prices / Inventory / Users): the small ⋯
+     toggle shares the label's line at the right edge instead of leaving a
+     mostly-empty ACTIONS row on every card. The dropdown panel is absolutely
+     positioned (it drops from the button, so it stays inside the card), and
+     whatever the menu reveals keeps its own full-width line below. */
+  .data td.actions-stack { flex-direction: row; flex-wrap: wrap; }
+  .data td.actions-stack::before { margin-right: auto; }
+}
+
+/* Sales tab: POS tile grid (plan §8 #13 amendment). Tiles come from the
+   price list; auto-fill minmax keeps columns ≥140px so the grid wraps
+   instead of overflowing at 320px phone width. */
+.pos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.pos-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 84px;
+  padding: 14px 10px;
+  background: #bfdbfe;                              /* pastel blue fill */
+  color: var(--ink);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(2, 48, 71, 0.08);
+}
+
+.pos-tile:hover { background: #dbeafe; }
+.pos-tile:active { background: #93c5fd; }           /* darker pastel on press */
+
+.pos-name { font-size: 16px; font-weight: 700; text-align: center; }
+.pos-price { font-size: 14px; font-weight: 600; color: var(--blue-dark); }
+
+/* The tally between the tiles and the Record button — one strip per
+   product tapped, with −/+ adjustments. Pure display: the recorded
+   amounts are always recomputed server-side on /sales/record. */
+.tally-bar {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+}
+
+.tally-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 15px;
+}
+
+.tally-line .tally-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tally-line .tally-line-amount { color: var(--muted); font-size: 14px; white-space: nowrap; }
+.tally-line button { padding: 2px 10px; font-size: 14px; }
+.tally-line .tally-remove { background: none; color: var(--muted); border: 1px solid var(--line); }
+.tally-line .tally-qty { min-width: 2.2em; text-align: center; font-weight: 700; }
+
+.tally-subtotal { margin: 8px 0 10px; text-align: right; color: var(--muted); font-size: 14px; }
+.tally-subtotal strong { color: var(--ink); font-size: 16px; margin-left: 6px; }
+
+.pos-record { width: 100%; padding: 13px; font-size: 16px; }
+
+/* Sales: the custom-price toggle looks like a text link, not a button. */
+button.small-link {
+  background: none;
+  border: none;
+  padding: 0;
+  font-weight: 400;
+  color: var(--blue-dark);
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+/* ---- login greeting banner (shows once, right after sign-in) ---- */
+.flash-greet {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: linear-gradient(180deg, #e0f2fe, #dbeafe);
+  border-color: #7dd3fc;
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 14px;
+}
+.greet-mascot { width: 46px; height: auto; flex-shrink: 0; }
+
+/* ---- peeking mascot (decorative, every page) ----
+   Hangs upside-down from under the header, at the screen's top corners —
+   upper right on some tabs, upper left on the others. Anchored with
+   position:fixed and a top offset that app.js keeps in sync with the
+   header's real height (--mascot-top; the tab row wraps on phones).
+   position:fixed can never add horizontal scroll — phone-safe on every
+   screen size. pointer-events:none means taps pass straight through it. */
+.mascot-peek {
+  position: fixed;
+  top: var(--mascot-top, 60px);
+  width: 100px;
+  pointer-events: none;
+  z-index: 30;               /* above page content, below ⋯ menus (40) */
+}
+.mascot-peek img { width: 100%; height: auto; display: block; }
+
+/* upper right — hangs with its head (the drop's tip) pointing INWARDS,
+   into the page, away from the corner */
+.mascot-peek.peek-dashboard, .mascot-peek.peek-sales,
+.mascot-peek.peek-prices,   .mascot-peek.peek-reports {
+  right: -26px;
+  transform: rotate(-168deg);
+}
+/* upper left — mirrored, head also pointing inwards (toward the page) */
+.mascot-peek.peek-trips, .mascot-peek.peek-customers,
+.mascot-peek.peek-inventory, .mascot-peek.peek-users {
+  left: -26px;
+  transform: rotate(168deg);
+}
+
+/* Bottom door-peek tabs (owner's picks): Dashboard, Delivery, Customers and
+   Users use the bigger, tilted mascot peeking around the screen's bottom
+   edge — right on Dashboard and Users, mirrored left on Delivery and
+   Customers. These overrides must come after the corner rules above. */
+.mascot-peek.peek-dashboard, .mascot-peek.peek-users {
+  top: auto; bottom: -8px; right: -42px; width: 120px;
+  transform: rotate(-9deg); transform-origin: bottom right;
+}
+.mascot-peek.peek-trips, .mascot-peek.peek-customers {
+  top: auto; bottom: -8px; left: -42px; width: 120px;
+  transform: scaleX(-1) rotate(-9deg);   /* default (center) origin:
+  mirroring about the left edge would flip the whole mascot off-screen */
+}
+
+@media (max-width: 900px) {
+  .mascot-peek { width: 76px; }
+  /* Phones: every dangling mascot hangs on the upper right. The upper-left
+     corner would sit on the wrapped tab row / page heading and cover text —
+     the right corner stays free (the last tab ends well before the edge). */
+  .mascot-peek.peek-sales, .mascot-peek.peek-prices,
+  .mascot-peek.peek-reports, .mascot-peek.peek-inventory { right: -18px; }
+  .mascot-peek.peek-inventory {
+    left: auto; right: -18px; transform: rotate(-168deg);
+  }
+  /* ...but the bottom door-peek tabs stay at the bottom here too */
+  .mascot-peek.peek-dashboard, .mascot-peek.peek-users {
+    width: 90px; top: auto; bottom: -8px; right: -32px;
+    transform: rotate(-9deg);
+  }
+  .mascot-peek.peek-trips, .mascot-peek.peek-customers {
+    width: 90px; top: auto; bottom: -8px; right: auto; left: -32px;
+    transform: scaleX(-1) rotate(-9deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* the bob/blink animation lives inside mascot.svg itself */
+}
+
+/* ==================================================================
+   Demo-only additions (everything above is the real app's stylesheet).
+   ================================================================== */
+
+/* ---- slim demo banner under the header ---- */
+.demo-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+  background: #fef3c7;
+  border-bottom: 1px solid #f59e0b;
+  color: #92400e;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 16px;
+}
+.demo-banner button { background: #92400e; }
+.demo-banner button:hover { background: #78350f; }
+
+/* ---- red flash variant for validation errors ---- */
+.flash-error {
+  background: #fef2f2;
+  border-color: #fecaca;
+  color: #b91c1c;
+}
+
+/* ---- login page (the real login.html's inline styles, adapted for the
+       SPA shell — same card, bubbles and waves) ---- */
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.login-page .sea { position: fixed; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.login-page .login-card { position: relative; z-index: 1; }
+.login-page .bubbles span {
+  background: rgba(29, 78, 216, 0.15);
+}
+.login-page .waves svg { fill: #1d4ed8; opacity: 0.18; }
+.login-page .waves svg.wave2 { opacity: 0.10; }
+.login-card {
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(2, 48, 71, 0.12);
+  padding: 28px 24px;
+  width: 100%;
+  max-width: 340px;
+}
+.login-card h1 { margin: 0 0 4px; font-size: 22px; color: #1e40af; text-align: center; }
+.login-logo { display: block; margin: 0 auto 4px; width: 88px; height: auto; }
+.login-card .sub { margin: 0 0 8px; text-align: center; color: #64748b; font-size: 14px; }
+.login-card label { display: block; font-size: 14px; margin: 12px 0 4px; color: #334155; }
+.login-card form > label:first-of-type { margin-top: 0; }
+.login-card input {
+  width: 100%;
+  margin-top: 4px;
+  padding: 10px 12px;
+  font-size: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+.login-card input:focus { outline: 2px solid #1d4ed8; border-color: #1d4ed8; }
+.login-card form button {
+  width: 100%;
+  margin-top: 18px;
+  padding: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  background: linear-gradient(135deg, #1e40af, #1d4ed8);
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+}
+.login-card form button:active { transform: translateY(1px); }
+.login-card .error {
+  background: #fef2f2;
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+.login-card .flash { margin-top: 12px; }
+
+/* ---- demo credentials box on the login card ---- */
+.demo-box {
+  margin-top: 16px;
+  border-top: 1px dashed var(--line);
+  padding-top: 12px;
+}
+.demo-box-title { margin: 0 0 8px; font-size: 14px; font-weight: 600; color: #334155; }
+.demo-role-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 14px;
+  color: var(--ink);
+}
+.demo-role-row button { margin: 0; padding: 6px 10px; font-size: 13px; }
+.demo-box .muted { font-size: 12px; margin: 8px 0 0; }
+

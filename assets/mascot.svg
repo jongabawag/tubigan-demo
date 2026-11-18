@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 250" width="220" height="250">
+  <!-- Tubigan mascot: friendly water drop holding a mini gallon -->
+  <style>
+    /* Gentle bobbing float — the whole character drifts up and down */
+    #char { animation: float 3s ease-in-out infinite; }
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-6px); }
+    }
+    /* The ground shadow shrinks/fades while the character is "up" */
+    #shadow { animation: shadowPulse 3s ease-in-out infinite; transform-box: view-box; transform-origin: 105px 232px; }
+    @keyframes shadowPulse {
+      0%, 100% { transform: scale(1);    opacity: 0.8; }
+      50%      { transform: scale(0.9);  opacity: 0.5; }
+    }
+    /* Blink — eyes squash shut briefly every few seconds */
+    .eye { animation: blink 4.2s infinite; transform-box: view-box; }
+    .eye-l { transform-origin: 90px 140px; }
+    .eye-r { transform-origin: 132px 140px; }
+    @keyframes blink {
+      0%, 90%, 100% { transform: scaleY(1); }
+      93%, 96%      { transform: scaleY(0.08); }
+    }
+    /* Waving arm — rocks back and forth from the shoulder */
+    #arm-wave { animation: wave 1.6s ease-in-out infinite; transform-box: view-box; transform-origin: 56px 150px; }
+    @keyframes wave {
+      0%, 100% { transform: rotate(0deg); }
+      50%      { transform: rotate(-14deg); }
+    }
+    /* Sparkle droplets twinkle */
+    .spark  { animation: twinkle 2.4s ease-in-out infinite; }
+    .spark2 { animation-delay: 1.2s; }
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.25; }
+      50%      { opacity: 1; }
+    }
+    /* Respect the viewer's "reduce motion" setting — stand still instead */
+    @media (prefers-reduced-motion: reduce) {
+      #char, #shadow, .eye, #arm-wave, .spark { animation: none; }
+    }
+  </style>
+  <defs>
+    <linearGradient id="dropBody" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#8fd0f8"/>
+      <stop offset="0.55" stop-color="#4a9ce8"/>
+      <stop offset="1" stop-color="#2b7fc9"/>
+    </linearGradient>
+    <linearGradient id="gallonBody" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#e8f4fd"/>
+      <stop offset="1" stop-color="#bfe0f7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ground shadow (stays on the ground while the mascot bobs) -->
+  <ellipse id="shadow" cx="105" cy="232" rx="58" ry="9" fill="#cfe6f7" opacity="0.8"/>
+
+  <g id="char">
+    <!-- waving arm (behind body) -->
+    <path id="arm-wave" d="M56 150 C 38 140 30 122 36 104" fill="none" stroke="#2b7fc9" stroke-width="13" stroke-linecap="round"/>
+
+    <!-- feet -->
+    <ellipse cx="86" cy="218" rx="13" ry="8" fill="#1b5e9e"/>
+    <ellipse cx="124" cy="218" rx="13" ry="8" fill="#1b5e9e"/>
+
+    <!-- drop body -->
+    <path d="M110 24
+             C 86 60 50 98 50 152
+             C 50 192 76 216 110 216
+             C 144 216 170 192 170 152
+             C 170 98 134 60 110 24 Z"
+          fill="url(#dropBody)" stroke="#1b5e9e" stroke-width="6" stroke-linejoin="round"/>
+
+    <!-- shine highlight -->
+    <path d="M78 92 C 68 108 63 124 63 142" fill="none" stroke="#ffffff" stroke-width="9" stroke-linecap="round" opacity="0.55"/>
+    <path d="M85 72 C 82 78 79 83 76 88" fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round" opacity="0.55"/>
+
+    <!-- eyes -->
+    <g class="eye eye-l">
+      <circle cx="90" cy="140" r="17" fill="#ffffff" stroke="#1b5e9e" stroke-width="4"/>
+      <circle cx="93" cy="143" r="7.5" fill="#173a5e"/>
+      <circle cx="96" cy="139" r="2.6" fill="#ffffff"/>
+    </g>
+    <g class="eye eye-r">
+      <circle cx="132" cy="140" r="17" fill="#ffffff" stroke="#1b5e9e" stroke-width="4"/>
+      <circle cx="135" cy="143" r="7.5" fill="#173a5e"/>
+      <circle cx="138" cy="139" r="2.6" fill="#ffffff"/>
+    </g>
+
+    <!-- cheeks -->
+    <ellipse cx="72" cy="166" rx="9" ry="5.5" fill="#ff9fb2" opacity="0.75"/>
+    <ellipse cx="150" cy="166" rx="9" ry="5.5" fill="#ff9fb2" opacity="0.75"/>
+
+    <!-- smile -->
+    <path d="M92 170 Q 111 190 130 170" fill="none" stroke="#173a5e" stroke-width="5.5" stroke-linecap="round"/>
+
+    <!-- right arm holding mini gallon -->
+    <path d="M164 152 C 180 146 188 136 190 122" fill="none" stroke="#2b7fc9" stroke-width="13" stroke-linecap="round"/>
+
+    <!-- mini gallon -->
+    <g stroke="#1b5e9e" stroke-width="4">
+      <rect x="176" y="96" width="34" height="14" rx="4" fill="#1b5e9e"/>          <!-- cap -->
+      <path d="M182 110 h22 l8 14 v44 a8 8 0 0 1 -8 8 h-22 a8 8 0 0 1 -8 -8 v-44 Z" fill="url(#gallonBody)"/> <!-- body -->
+      <path d="M188 118 q6 -6 12 0" fill="none" stroke-width="3.5"/>               <!-- handle -->
+      <rect x="186" y="138" width="18" height="20" rx="3" fill="#ffffff" stroke-width="3"/>
+      <path d="M195 142 C 192.5 146.5 190 149.5 190 152.5 A 5 5 0 0 0 200 152.5 C 200 149.5 197.5 146.5 195 142 Z" fill="#4a9ce8" stroke="none"/> <!-- tiny drop on label -->
+    </g>
+
+    <!-- sparkle droplets -->
+    <path class="spark" d="M28 70 q-6 10 0 14 q6 -4 0 -14" fill="#7ec8f7"/>
+    <path class="spark spark2" d="M196 64 q-5 8 0 12 q5 -4 0 -12" fill="#7ec8f7"/>
+  </g>
+</svg>
